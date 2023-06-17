@@ -1,11 +1,13 @@
 using System.Collections;
 using System.Collections.Concurrent;
+using System.Diagnostics;
 
 namespace FileShrinker;
 
 public partial class ShrinkerWindow : Form
 {
     private const long DEFAULT_FILE_SIZE_THRESHOLD_BYTES = 1024 * 1024 * 10; // 10 MB
+    private const long DEFAULT_FILE_SIZE_THRESHOLD_KILOBYTES = DEFAULT_FILE_SIZE_THRESHOLD_BYTES / 1024;
 
     private Button scanButton;
     private CheckedListBox fileListBox;
@@ -17,11 +19,24 @@ public partial class ShrinkerWindow : Form
 
     private Hashtable fileSizeTable;
     private readonly Progress<int> progress;
+    private Button checkAllButton;
+    private Button uncheckAllButton;
+    private Button checkLargerThanButton;
+    private NumericUpDown checkLargerThanUpDown;
+    private Label bLabel;
+    private GroupBox dangerGroup;
+    private Button checkDangerButton;
+    private Label itemsSelectedLabel;
+    private Label itemsTotalLabel;
     private readonly ConcurrentBag<string> failedFiles = new();
 
     // Suppress SC8618: Non-nullable field is uninitialized. Consider declaring as nullable.
     // This is a false positive, because InitializeComponent() initializes all fields.
 #pragma warning disable CS8618
+    // Suppress SC8602: Dereference of a possibly null reference.
+    // This is also a false positive, because InitializeComponent() initializes all fields.
+#pragma warning disable CS8602
+
     public ShrinkerWindow()
     {
         InitializeComponent();
@@ -35,8 +50,14 @@ public partial class ShrinkerWindow : Form
                 shrinkProgressBar.Value = value;
             }
         });
+
+        checkLargerThanUpDown.Minimum = 0;
+        checkLargerThanUpDown.Maximum = long.MaxValue;
+        checkLargerThanUpDown.Value = DEFAULT_FILE_SIZE_THRESHOLD_KILOBYTES;
     }
+
 #pragma warning restore CS8618
+#pragma warning restore CS8602
 
     private void InitializeComponent()
     {
@@ -47,6 +68,17 @@ public partial class ShrinkerWindow : Form
         fileListBox = new CheckedListBox();
         shrinkButton = new Button();
         shrinkProgressBar = new ProgressBar();
+        checkAllButton = new Button();
+        uncheckAllButton = new Button();
+        checkLargerThanButton = new Button();
+        checkLargerThanUpDown = new NumericUpDown();
+        bLabel = new Label();
+        dangerGroup = new GroupBox();
+        checkDangerButton = new Button();
+        itemsSelectedLabel = new Label();
+        itemsTotalLabel = new Label();
+        ((System.ComponentModel.ISupportInitialize)checkLargerThanUpDown).BeginInit();
+        dangerGroup.SuspendLayout();
         SuspendLayout();
         // 
         // folderSelectButton
@@ -74,6 +106,7 @@ public partial class ShrinkerWindow : Form
         rootPathBox.Name = "rootPathBox";
         rootPathBox.Size = new Size(698, 23);
         rootPathBox.TabIndex = 2;
+        rootPathBox.KeyDown += RootPathBox_KeyDown;
         // 
         // scanButton
         // 
@@ -90,14 +123,16 @@ public partial class ShrinkerWindow : Form
         fileListBox.CheckOnClick = true;
         fileListBox.FormattingEnabled = true;
         fileListBox.HorizontalScrollbar = true;
-        fileListBox.Location = new Point(12, 43);
+        fileListBox.Location = new Point(12, 97);
         fileListBox.Name = "fileListBox";
-        fileListBox.Size = new Size(867, 508);
+        fileListBox.Size = new Size(867, 454);
         fileListBox.TabIndex = 4;
+        fileListBox.ItemCheck += FileListBox_ItemCheck;
+        fileListBox.SelectedIndexChanged += FileListBox_SelectedIndexChanged;
         // 
         // shrinkButton
         // 
-        shrinkButton.Location = new Point(745, 557);
+        shrinkButton.Location = new Point(745, 566);
         shrinkButton.Name = "shrinkButton";
         shrinkButton.Size = new Size(134, 42);
         shrinkButton.TabIndex = 5;
@@ -107,14 +142,107 @@ public partial class ShrinkerWindow : Form
         // 
         // shrinkProgressBar
         // 
-        shrinkProgressBar.Location = new Point(12, 569);
+        shrinkProgressBar.Location = new Point(12, 583);
         shrinkProgressBar.Name = "shrinkProgressBar";
         shrinkProgressBar.Size = new Size(724, 23);
         shrinkProgressBar.TabIndex = 6;
         // 
+        // checkAllButton
+        // 
+        checkAllButton.Location = new Point(12, 39);
+        checkAllButton.Name = "checkAllButton";
+        checkAllButton.Size = new Size(90, 23);
+        checkAllButton.TabIndex = 7;
+        checkAllButton.Text = "Check all";
+        checkAllButton.UseVisualStyleBackColor = true;
+        checkAllButton.Click += CheckAllButton_Click;
+        // 
+        // uncheckAllButton
+        // 
+        uncheckAllButton.Location = new Point(12, 67);
+        uncheckAllButton.Name = "uncheckAllButton";
+        uncheckAllButton.Size = new Size(90, 23);
+        uncheckAllButton.TabIndex = 8;
+        uncheckAllButton.Text = "Uncheck all";
+        uncheckAllButton.UseVisualStyleBackColor = true;
+        uncheckAllButton.Click += UncheckAllButton_Click;
+        // 
+        // checkLargerThanButton
+        // 
+        checkLargerThanButton.Location = new Point(159, 51);
+        checkLargerThanButton.Name = "checkLargerThanButton";
+        checkLargerThanButton.Size = new Size(115, 23);
+        checkLargerThanButton.TabIndex = 9;
+        checkLargerThanButton.Text = "Check larger than:";
+        checkLargerThanButton.UseVisualStyleBackColor = true;
+        checkLargerThanButton.Click += CheckLargerThanButton_Click;
+        // 
+        // checkLargerThanUpDown
+        // 
+        checkLargerThanUpDown.Location = new Point(280, 51);
+        checkLargerThanUpDown.Maximum = new decimal(new int[] { -1, int.MaxValue, 0, 0 });
+        checkLargerThanUpDown.Name = "checkLargerThanUpDown";
+        checkLargerThanUpDown.Size = new Size(107, 23);
+        checkLargerThanUpDown.TabIndex = 10;
+        checkLargerThanUpDown.ThousandsSeparator = true;
+        // 
+        // bLabel
+        // 
+        bLabel.AutoSize = true;
+        bLabel.Location = new Point(393, 55);
+        bLabel.Name = "bLabel";
+        bLabel.Size = new Size(21, 15);
+        bLabel.TabIndex = 11;
+        bLabel.Text = "KB";
+        // 
+        // dangerGroup
+        // 
+        dangerGroup.Controls.Add(checkDangerButton);
+        dangerGroup.Location = new Point(420, 38);
+        dangerGroup.Name = "dangerGroup";
+        dangerGroup.Size = new Size(459, 53);
+        dangerGroup.TabIndex = 12;
+        dangerGroup.TabStop = false;
+        dangerGroup.Text = "!DANGER ZONE!";
+        // 
+        // checkDangerButton
+        // 
+        checkDangerButton.Location = new Point(6, 24);
+        checkDangerButton.Name = "checkDangerButton";
+        checkDangerButton.Size = new Size(140, 23);
+        checkDangerButton.TabIndex = 0;
+        checkDangerButton.Text = "Check recommended";
+        checkDangerButton.UseVisualStyleBackColor = true;
+        // 
+        // itemsSelectedLabel
+        // 
+        itemsSelectedLabel.AutoSize = true;
+        itemsSelectedLabel.Location = new Point(128, 559);
+        itemsSelectedLabel.Name = "itemsSelectedLabel";
+        itemsSelectedLabel.Size = new Size(94, 15);
+        itemsSelectedLabel.TabIndex = 13;
+        itemsSelectedLabel.Text = "Items selected: 0";
+        // 
+        // itemsTotalLabel
+        // 
+        itemsTotalLabel.AutoSize = true;
+        itemsTotalLabel.Location = new Point(12, 559);
+        itemsTotalLabel.Name = "itemsTotalLabel";
+        itemsTotalLabel.Size = new Size(75, 15);
+        itemsTotalLabel.TabIndex = 14;
+        itemsTotalLabel.Text = "Items total: 0";
+        // 
         // ShrinkerWindow
         // 
-        ClientSize = new Size(891, 604);
+        ClientSize = new Size(891, 618);
+        Controls.Add(itemsTotalLabel);
+        Controls.Add(itemsSelectedLabel);
+        Controls.Add(dangerGroup);
+        Controls.Add(bLabel);
+        Controls.Add(checkLargerThanUpDown);
+        Controls.Add(checkLargerThanButton);
+        Controls.Add(uncheckAllButton);
+        Controls.Add(checkAllButton);
         Controls.Add(shrinkProgressBar);
         Controls.Add(shrinkButton);
         Controls.Add(fileListBox);
@@ -125,6 +253,8 @@ public partial class ShrinkerWindow : Form
         FormBorderStyle = FormBorderStyle.FixedSingle;
         MaximizeBox = false;
         Name = "ShrinkerWindow";
+        ((System.ComponentModel.ISupportInitialize)checkLargerThanUpDown).EndInit();
+        dangerGroup.ResumeLayout(false);
         ResumeLayout(false);
         PerformLayout();
     }
@@ -136,8 +266,10 @@ public partial class ShrinkerWindow : Form
         {
             currentPath = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
         }
-        FolderBrowserDialog cxtCacheFolderBrowser = new();
-        cxtCacheFolderBrowser.InitialDirectory = currentPath;
+        FolderBrowserDialog cxtCacheFolderBrowser = new()
+        {
+            InitialDirectory = currentPath
+        };
         DialogResult result = cxtCacheFolderBrowser.ShowDialog();
         if (result == DialogResult.OK)
         {
@@ -177,11 +309,12 @@ public partial class ShrinkerWindow : Form
 
         // Fill the list box with the files
         fileListBox.Items.Clear();
+        fileListBox.Items.AddRange(files);
+        UpdateItemsTotalLabel();
         foreach (string fileName in files)
         {
             if (ShouldProcessFile(fileName))
             {
-                fileListBox.Items.Add(fileName);
                 fileListBox.SetItemChecked(fileListBox.Items.Count - 1, true);
             }
         }
@@ -313,4 +446,85 @@ public partial class ShrinkerWindow : Form
         return (Math.Sign(byteCount) * num).ToString() + suf[place];
     }
 
+    private long GetFileSize(string? fileName)
+    {
+        Debug.Assert(!string.IsNullOrWhiteSpace(fileName));
+
+        if (string.IsNullOrWhiteSpace(fileName))
+        {
+            return 0;
+        }
+        if (fileSizeTable.ContainsKey(fileName) && fileSizeTable[fileName] != null)
+        {
+            return (long)fileSizeTable[fileName]!;
+        }
+        FileInfo fileInfo = new(fileName);
+        long fileSize = fileInfo.Length;
+        fileSizeTable[fileName] = fileSize;
+        return fileSize;
+    }
+
+    private void CheckAllButton_Click(object sender, EventArgs e)
+    {
+        for (int i = 0; i < fileListBox.Items.Count; i++)
+        {
+            fileListBox.SetItemChecked(i, true);
+        }
+    }
+
+    private void UncheckAllButton_Click(object sender, EventArgs e)
+    {
+        for (int i = 0; i < fileListBox.Items.Count; i++)
+        {
+            fileListBox.SetItemChecked(i, false);
+        }
+    }
+
+    private void CheckLargerThanButton_Click(object sender, EventArgs e)
+    {
+        for (int i = 0; i < fileListBox.Items.Count; i++)
+        {
+            string? fileName = fileListBox.Items[i] as string;
+            if (GetFileSize(fileName) > checkLargerThanUpDown.Value * 1024)
+            {
+                fileListBox.SetItemChecked(i, true);
+            }
+        }
+    }
+
+    private void RootPathBox_KeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.KeyCode == Keys.Enter)
+        {
+            ScanButton_Click(sender, e);
+        }
+    }
+
+    private void FileListBox_SelectedIndexChanged(object sender, EventArgs e)
+    {
+        UpdateItemsSelectedLabel();
+    }
+
+    private void AddFilesToFileListBox(string[] files)
+    {
+        fileListBox.Items.AddRange(files);
+        UpdateItemsTotalLabel();
+    }
+
+    private void FileListBox_ItemCheck(object sender, ItemCheckEventArgs e)
+    {
+        int count = fileListBox.CheckedIndices.Count + (e.NewValue == CheckState.Checked ? 1 : -1);
+        UpdateItemsSelectedLabel(count);
+    }
+
+    private void UpdateItemsTotalLabel()
+    {
+        itemsTotalLabel.Text = $"Total items: {fileListBox.Items.Count}";
+    }
+
+    private void UpdateItemsSelectedLabel(int? count = null)
+    {
+        int newValue = count ?? fileListBox.CheckedItems.Count;
+        itemsSelectedLabel.Text = $"Items selected: {newValue}";
+    }
 }
