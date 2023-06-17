@@ -1,6 +1,8 @@
+using Microsoft.Extensions.Configuration;
 using System.Collections;
 using System.Collections.Concurrent;
 using System.Diagnostics;
+using System.Text.RegularExpressions;
 
 namespace FileShrinker;
 
@@ -9,6 +11,13 @@ public partial class ShrinkerWindow : Form
     private const long DEFAULT_FILE_SIZE_THRESHOLD_BYTES = 1024 * 1024 * 10; // 10 MB
     private const long DEFAULT_FILE_SIZE_THRESHOLD_KILOBYTES = DEFAULT_FILE_SIZE_THRESHOLD_BYTES / 1024;
 
+    private Hashtable fileSizeTable;
+    private readonly Progress<int> progress;
+    private readonly ConcurrentBag<string> failedFiles = new();
+    private List<string>? nullifyPatterns;
+    private List<string>? nullifyBlacklistPatterns;
+    private bool isWorking = false;
+
     private Button scanButton;
     private CheckedListBox fileListBox;
     private Button shrinkButton;
@@ -16,9 +25,6 @@ public partial class ShrinkerWindow : Form
     private ProgressBar shrinkProgressBar;
     private Label rootPathLabel;
     private TextBox rootPathBox;
-
-    private Hashtable fileSizeTable;
-    private readonly Progress<int> progress;
     private Button checkAllButton;
     private Button uncheckAllButton;
     private Button checkLargerThanButton;
@@ -28,7 +34,7 @@ public partial class ShrinkerWindow : Form
     private Button checkDangerButton;
     private Label itemsSelectedLabel;
     private Label itemsTotalLabel;
-    private readonly ConcurrentBag<string> failedFiles = new();
+    private Button nullifyButton;
 
     // Suppress SC8618: Non-nullable field is uninitialized. Consider declaring as nullable.
     // This is a false positive, because InitializeComponent() initializes all fields.
@@ -54,6 +60,14 @@ public partial class ShrinkerWindow : Form
         checkLargerThanUpDown.Minimum = 0;
         checkLargerThanUpDown.Maximum = long.MaxValue;
         checkLargerThanUpDown.Value = DEFAULT_FILE_SIZE_THRESHOLD_KILOBYTES;
+
+        IConfigurationBuilder builder = new ConfigurationBuilder()
+            .SetBasePath(Directory.GetCurrentDirectory())
+            .AddJsonFile("appsettings.json");
+
+        IConfiguration config = builder.Build();
+        nullifyPatterns = config.GetSection("NullifyPatterns").Get<List<string>>();
+        nullifyBlacklistPatterns = config.GetSection("NullifyBlacklistPatterns").Get<List<string>>();
     }
 
 #pragma warning restore CS8618
@@ -74,6 +88,7 @@ public partial class ShrinkerWindow : Form
         checkLargerThanUpDown = new NumericUpDown();
         bLabel = new Label();
         dangerGroup = new GroupBox();
+        nullifyButton = new Button();
         checkDangerButton = new Button();
         itemsSelectedLabel = new Label();
         itemsTotalLabel = new Label();
@@ -129,6 +144,7 @@ public partial class ShrinkerWindow : Form
         fileListBox.TabIndex = 4;
         fileListBox.ItemCheck += FileListBox_ItemCheck;
         fileListBox.SelectedIndexChanged += FileListBox_SelectedIndexChanged;
+        fileListBox.MouseDown += FileListBox_MouseDown;
         // 
         // shrinkButton
         // 
@@ -136,7 +152,7 @@ public partial class ShrinkerWindow : Form
         shrinkButton.Name = "shrinkButton";
         shrinkButton.Size = new Size(134, 42);
         shrinkButton.TabIndex = 5;
-        shrinkButton.Text = "Shrink!";
+        shrinkButton.Text = "Compress selected";
         shrinkButton.UseVisualStyleBackColor = true;
         shrinkButton.Click += ShrinkButton_Click;
         // 
@@ -153,7 +169,7 @@ public partial class ShrinkerWindow : Form
         checkAllButton.Name = "checkAllButton";
         checkAllButton.Size = new Size(90, 23);
         checkAllButton.TabIndex = 7;
-        checkAllButton.Text = "Check all";
+        checkAllButton.Text = "Select all";
         checkAllButton.UseVisualStyleBackColor = true;
         checkAllButton.Click += CheckAllButton_Click;
         // 
@@ -163,33 +179,34 @@ public partial class ShrinkerWindow : Form
         uncheckAllButton.Name = "uncheckAllButton";
         uncheckAllButton.Size = new Size(90, 23);
         uncheckAllButton.TabIndex = 8;
-        uncheckAllButton.Text = "Uncheck all";
+        uncheckAllButton.Text = "Unselect all";
         uncheckAllButton.UseVisualStyleBackColor = true;
         uncheckAllButton.Click += UncheckAllButton_Click;
         // 
         // checkLargerThanButton
         // 
-        checkLargerThanButton.Location = new Point(159, 51);
+        checkLargerThanButton.Location = new Point(108, 67);
         checkLargerThanButton.Name = "checkLargerThanButton";
         checkLargerThanButton.Size = new Size(115, 23);
         checkLargerThanButton.TabIndex = 9;
-        checkLargerThanButton.Text = "Check larger than:";
+        checkLargerThanButton.Text = "Select larger than:";
         checkLargerThanButton.UseVisualStyleBackColor = true;
         checkLargerThanButton.Click += CheckLargerThanButton_Click;
         // 
         // checkLargerThanUpDown
         // 
-        checkLargerThanUpDown.Location = new Point(280, 51);
+        checkLargerThanUpDown.Location = new Point(229, 67);
         checkLargerThanUpDown.Maximum = new decimal(new int[] { -1, int.MaxValue, 0, 0 });
         checkLargerThanUpDown.Name = "checkLargerThanUpDown";
         checkLargerThanUpDown.Size = new Size(107, 23);
         checkLargerThanUpDown.TabIndex = 10;
         checkLargerThanUpDown.ThousandsSeparator = true;
+        checkLargerThanUpDown.KeyDown += CheckLargerThanUpDown_KeyDown;
         // 
         // bLabel
         // 
         bLabel.AutoSize = true;
-        bLabel.Location = new Point(393, 55);
+        bLabel.Location = new Point(342, 71);
         bLabel.Name = "bLabel";
         bLabel.Size = new Size(21, 15);
         bLabel.TabIndex = 11;
@@ -197,22 +214,35 @@ public partial class ShrinkerWindow : Form
         // 
         // dangerGroup
         // 
+        dangerGroup.BackColor = SystemColors.Control;
+        dangerGroup.Controls.Add(nullifyButton);
         dangerGroup.Controls.Add(checkDangerButton);
-        dangerGroup.Location = new Point(420, 38);
+        dangerGroup.Location = new Point(588, 38);
         dangerGroup.Name = "dangerGroup";
-        dangerGroup.Size = new Size(459, 53);
+        dangerGroup.Size = new Size(291, 53);
         dangerGroup.TabIndex = 12;
         dangerGroup.TabStop = false;
-        dangerGroup.Text = "!DANGER ZONE!";
+        dangerGroup.Text = "!!! DANGER ZONE !!!";
+        // 
+        // nullifyButton
+        // 
+        nullifyButton.Location = new Point(150, 20);
+        nullifyButton.Name = "nullifyButton";
+        nullifyButton.Size = new Size(135, 23);
+        nullifyButton.TabIndex = 1;
+        nullifyButton.Text = "NULLIFY SELECTED";
+        nullifyButton.UseVisualStyleBackColor = true;
+        nullifyButton.Click += NullifyButton_Click;
         // 
         // checkDangerButton
         // 
-        checkDangerButton.Location = new Point(6, 24);
+        checkDangerButton.Location = new Point(6, 20);
         checkDangerButton.Name = "checkDangerButton";
         checkDangerButton.Size = new Size(140, 23);
         checkDangerButton.TabIndex = 0;
-        checkDangerButton.Text = "Check recommended";
+        checkDangerButton.Text = "Select recommended";
         checkDangerButton.UseVisualStyleBackColor = true;
+        checkDangerButton.Click += CheckDangerButton_Click;
         // 
         // itemsSelectedLabel
         // 
@@ -253,13 +283,14 @@ public partial class ShrinkerWindow : Form
         FormBorderStyle = FormBorderStyle.FixedSingle;
         MaximizeBox = false;
         Name = "ShrinkerWindow";
+        Text = "File Shrinker and Nullifier";
         ((System.ComponentModel.ISupportInitialize)checkLargerThanUpDown).EndInit();
         dangerGroup.ResumeLayout(false);
         ResumeLayout(false);
         PerformLayout();
     }
 
-    private void FolderSelectButton_Click(object sender, EventArgs e)
+    private void FolderSelectButton_Click(object? sender, EventArgs e)
     {
         string currentPath = rootPathBox.Text;
         if (!Directory.Exists(currentPath))
@@ -278,7 +309,7 @@ public partial class ShrinkerWindow : Form
         }
     }
 
-    private void ScanButton_Click(object sender, EventArgs e)
+    private void ScanButton_Click(object? sender, EventArgs e)
     {
         if (!Directory.Exists(rootPathBox.Text))
         {
@@ -315,15 +346,17 @@ public partial class ShrinkerWindow : Form
         {
             if (ShouldProcessFile(fileName))
             {
-                fileListBox.SetItemChecked(fileListBox.Items.Count - 1, true);
+                fileListBox.SetItemChecked(fileListBox.Items.IndexOf(fileName), true);
             }
         }
 
         // Enable previously disabled elements
         SetUIEnabled(true);
+        UpdateItemsTotalLabel();
+        UpdateItemsSelectedLabel();
     }
 
-    private async void ShrinkButton_Click(object sender, EventArgs e)
+    private async void ShrinkButton_Click(object? sender, EventArgs e)
     {
         if (fileListBox.CheckedItems.Count == 0)
         {
@@ -407,11 +440,23 @@ public partial class ShrinkerWindow : Form
 
     private void SetUIEnabled(bool enabled)
     {
+        isWorking = !enabled;
         folderSelectButton.Enabled = enabled;
         scanButton.Enabled = enabled;
         shrinkButton.Enabled = enabled;
         fileListBox.Enabled = enabled;
         rootPathBox.Enabled = enabled;
+        checkAllButton.Enabled = enabled;
+        uncheckAllButton.Enabled = enabled;
+        checkDangerButton.Enabled = enabled;
+        nullifyButton.Enabled = enabled;
+        checkLargerThanButton.Enabled = enabled;
+        checkLargerThanUpDown.Enabled = enabled;
+
+        if (enabled)
+        {
+            UpdateLabels();
+        }
     }
 
     private bool ShouldProcessFile(string? fileName)
@@ -464,24 +509,33 @@ public partial class ShrinkerWindow : Form
         return fileSize;
     }
 
-    private void CheckAllButton_Click(object sender, EventArgs e)
+    private void CheckAllButton_Click(object? sender, EventArgs e)
     {
+        SetUIEnabled(false);
         for (int i = 0; i < fileListBox.Items.Count; i++)
         {
             fileListBox.SetItemChecked(i, true);
         }
+        SetUIEnabled(true);
     }
 
-    private void UncheckAllButton_Click(object sender, EventArgs e)
+    private void UncheckAllButton_Click(object? sender, EventArgs e)
     {
+        SetUIEnabled(false);
         for (int i = 0; i < fileListBox.Items.Count; i++)
         {
             fileListBox.SetItemChecked(i, false);
         }
+        SetUIEnabled(true);
     }
 
-    private void CheckLargerThanButton_Click(object sender, EventArgs e)
+    private void CheckLargerThanButton_Click(object? sender, EventArgs e)
     {
+        SetUIEnabled(false);
+        foreach (int i in fileListBox.CheckedIndices)
+        {
+            fileListBox.SetItemChecked(i, false);
+        }
         for (int i = 0; i < fileListBox.Items.Count; i++)
         {
             string? fileName = fileListBox.Items[i] as string;
@@ -490,9 +544,10 @@ public partial class ShrinkerWindow : Form
                 fileListBox.SetItemChecked(i, true);
             }
         }
+        SetUIEnabled(true);
     }
 
-    private void RootPathBox_KeyDown(object sender, KeyEventArgs e)
+    private void RootPathBox_KeyDown(object? sender, KeyEventArgs e)
     {
         if (e.KeyCode == Keys.Enter)
         {
@@ -500,21 +555,31 @@ public partial class ShrinkerWindow : Form
         }
     }
 
-    private void FileListBox_SelectedIndexChanged(object sender, EventArgs e)
+    private void FileListBox_SelectedIndexChanged(object? sender, EventArgs e)
     {
+        if (isWorking)
+        {
+            return;
+        }
+
         UpdateItemsSelectedLabel();
     }
 
-    private void AddFilesToFileListBox(string[] files)
+    private void FileListBox_ItemCheck(object? sender, ItemCheckEventArgs e)
     {
-        fileListBox.Items.AddRange(files);
-        UpdateItemsTotalLabel();
-    }
+        if (isWorking)
+        {
+            return;
+        }
 
-    private void FileListBox_ItemCheck(object sender, ItemCheckEventArgs e)
-    {
         int count = fileListBox.CheckedIndices.Count + (e.NewValue == CheckState.Checked ? 1 : -1);
         UpdateItemsSelectedLabel(count);
+    }
+
+    private void UpdateLabels()
+    {
+        UpdateItemsSelectedLabel();
+        UpdateItemsTotalLabel();
     }
 
     private void UpdateItemsTotalLabel()
@@ -526,5 +591,122 @@ public partial class ShrinkerWindow : Form
     {
         int newValue = count ?? fileListBox.CheckedItems.Count;
         itemsSelectedLabel.Text = $"Items selected: {newValue}";
+    }
+
+    private void CheckDangerButton_Click(object? sender, EventArgs e)
+    {
+        Debug.Assert(nullifyPatterns != null);
+        Debug.Assert(nullifyBlacklistPatterns != null);
+        if (nullifyPatterns == null || nullifyBlacklistPatterns == null || fileListBox.Items.Count == 0)
+        {
+            return;
+        }
+
+        SetUIEnabled(false);
+
+        foreach (int i in fileListBox.CheckedIndices)
+        {
+            fileListBox.SetItemChecked(i, false);
+        }
+        for (int i = 0; i < fileListBox.Items.Count; i++)
+        {
+            string? fileName = fileListBox.Items[i] as string;
+            fileListBox.SetItemChecked(i, IsFileRecommendedForNullification(fileName));
+        }
+
+        SetUIEnabled(true);
+    }
+
+    private bool IsFileRecommendedForNullification(string? fileName)
+    {
+        Debug.Assert(nullifyPatterns != null);
+        if (string.IsNullOrWhiteSpace(fileName) || IsFileBlacklisted(fileName))
+        {
+            return false;
+        }
+
+        return nullifyPatterns.Any(pattern => Regex.IsMatch(fileName, pattern));
+    }
+
+    private bool IsFileBlacklisted(string fileName)
+    {
+        Debug.Assert(nullifyBlacklistPatterns != null);
+        return nullifyBlacklistPatterns.Any(pattern => Regex.IsMatch(fileName, pattern));
+    }
+
+    private void FileListBox_MouseDown(object? sender, MouseEventArgs e)
+    {
+        if (e.Button == MouseButtons.Right)
+        {
+            int index = fileListBox.IndexFromPoint(e.Location);
+            if (index != ListBox.NoMatches)
+            {
+                fileListBox.SelectedIndex = index;
+
+                string? filePath = fileListBox.SelectedItem as string;
+                if (!string.IsNullOrEmpty(filePath) && File.Exists(filePath))
+                {
+                    Process.Start("explorer.exe", $"/select,\"{filePath}\"");
+                }
+            }
+        }
+    }
+
+    private void NullifyButton_Click(object? sender, EventArgs e)
+    {
+        SetUIEnabled(false);
+
+        failedFiles.Clear();
+        long totalBytesFreed = 0;
+        foreach (string fileName in fileListBox.CheckedItems)
+        {
+            try
+            {
+                FileInfo fileInfo = new(fileName);
+                long fileSize = fileInfo.Length;
+                FileTools.NullifyFile(fileName);
+                totalBytesFreed += fileSize;
+            }
+            catch
+            {
+                failedFiles.Add(fileName);
+            }
+        }
+        if (!failedFiles.Any())
+        {
+            MessageBox.Show(
+                $"Successfully nullified {fileListBox.CheckedItems.Count} files, freeing {BytesToString(totalBytesFreed)} of disk space.", "Success",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Information
+            );
+        }
+        else
+        {
+            MessageBox.Show($"Nullified {fileListBox.CheckedItems.Count} files, freeing {BytesToString(totalBytesFreed)} of disk space. There were errors for some of the files. These files will remain selected.",
+                "Finished with errors",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Warning
+           );
+        }
+        // Uncheck all items except for failed files
+        for (int i = 0; i < fileListBox.Items.Count; i++)
+        {
+            string? fileName = fileListBox.Items[i] as string;
+            if (failedFiles.Contains(fileName))
+            {
+                continue;
+            }
+            fileListBox.SetItemChecked(i, false);
+        }
+
+        SetUIEnabled(true);
+    }
+
+    private void CheckLargerThanUpDown_KeyDown(object? sender, KeyEventArgs e)
+    {
+        if (e.KeyCode == Keys.Enter)
+        {
+            CheckLargerThanButton_Click(sender, e);
+        }
     }
 }

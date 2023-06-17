@@ -19,6 +19,9 @@ public static class FileTools
         ref int lpBytesReturned,
         IntPtr lpOverlapped);
 
+    /// <summary>
+    /// Enables NTFS compression on the specified file or directory.
+    /// </summary>
     public static bool EnableCompression(IntPtr handle)
     {
         if (handle == IntPtr.Zero)
@@ -32,6 +35,9 @@ public static class FileTools
             ref lpBytesReturned, IntPtr.Zero) != 0;
     }
 
+    /// <summary>
+    /// Gets the size of the file on disk.
+    /// </summary>
     public static long GetFileSizeOnDisk(string file)
     {
         FileInfo info = new(file);
@@ -57,4 +63,14 @@ public static class FileTools
     static extern int GetDiskFreeSpaceW([In, MarshalAs(UnmanagedType.LPWStr)] string lpRootPathName,
        out uint lpSectorsPerCluster, out uint lpBytesPerSector, out uint lpNumberOfFreeClusters,
        out uint lpTotalNumberOfClusters);
+
+    /// <summary>
+    /// Sets the file size to 0 bytes.
+    /// </summary>
+    public static void NullifyFile(string fileName)
+    {
+        using FileStream fs = new(fileName, FileMode.Open, FileAccess.Write);
+        fs.SetLength(0);
+        fs.Close();
+    }
 }
