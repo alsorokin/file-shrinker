@@ -34,6 +34,7 @@ public partial class ShrinkerWindow : Form
     private Button checkDangerButton;
     private Label itemsSelectedLabel;
     private Label itemsTotalLabel;
+    private Label sizeLabel;
     private Button nullifyButton;
 
     // Suppress SC8618: Non-nullable field is uninitialized. Consider declaring as nullable.
@@ -92,6 +93,7 @@ public partial class ShrinkerWindow : Form
         checkDangerButton = new Button();
         itemsSelectedLabel = new Label();
         itemsTotalLabel = new Label();
+        sizeLabel = new Label();
         ((System.ComponentModel.ISupportInitialize)checkLargerThanUpDown).BeginInit();
         dangerGroup.SuspendLayout();
         SuspendLayout();
@@ -262,9 +264,19 @@ public partial class ShrinkerWindow : Form
         itemsTotalLabel.TabIndex = 14;
         itemsTotalLabel.Text = "Items total: 0";
         // 
+        // sizeLabel
+        // 
+        sizeLabel.AutoSize = true;
+        sizeLabel.Location = new Point(271, 559);
+        sizeLabel.Name = "sizeLabel";
+        sizeLabel.Size = new Size(95, 15);
+        sizeLabel.TabIndex = 15;
+        sizeLabel.Text = "Selected size: 0 B";
+        // 
         // ShrinkerWindow
         // 
         ClientSize = new Size(891, 618);
+        Controls.Add(sizeLabel);
         Controls.Add(itemsTotalLabel);
         Controls.Add(itemsSelectedLabel);
         Controls.Add(dangerGroup);
@@ -375,17 +387,15 @@ public partial class ShrinkerWindow : Form
         long totalBytes = 0;
         foreach (string fileName in selectedFileNames)
         {
-            long? fileSize = fileSizeTable.ContainsKey(fileName) ? fileSizeTable[fileName] as long? : null;
-            if (fileSize.HasValue)
-            {
-                totalBytes += fileSize.Value;
-            }
+            totalBytes += GetFileSize(fileName);
         }
         long totalBytesOnDisk = 0;
         foreach (string fileName in selectedFileNames)
         {
             long sizeOnDisk = FileTools.GetFileSizeOnDisk(fileName);
             totalBytesOnDisk += sizeOnDisk;
+            // Write new file size to the table
+            fileSizeTable[fileName] = sizeOnDisk;
         }
         long totalBytesSaved = totalBytes - totalBytesOnDisk;
         string savedBytesString = BytesToString(totalBytesSaved);
@@ -469,6 +479,7 @@ public partial class ShrinkerWindow : Form
         FileInfo fileInfo = new(fileName);
         if ((fileInfo.Attributes & FileAttributes.Compressed) != 0)
         {
+            fileSizeTable[fileName] = FileTools.GetFileSizeOnDisk(fileName);
             return false;
         }
         long fileSize = fileInfo.Length;
@@ -563,6 +574,7 @@ public partial class ShrinkerWindow : Form
         }
 
         UpdateItemsSelectedLabel();
+        UpdateSelectedSizeLabel();
     }
 
     private void FileListBox_ItemCheck(object? sender, ItemCheckEventArgs e)
@@ -574,12 +586,14 @@ public partial class ShrinkerWindow : Form
 
         int count = fileListBox.CheckedIndices.Count + (e.NewValue == CheckState.Checked ? 1 : -1);
         UpdateItemsSelectedLabel(count);
+        UpdateSelectedSizeLabel();
     }
 
     private void UpdateLabels()
     {
         UpdateItemsSelectedLabel();
         UpdateItemsTotalLabel();
+        UpdateSelectedSizeLabel();
     }
 
     private void UpdateItemsTotalLabel()
@@ -591,6 +605,17 @@ public partial class ShrinkerWindow : Form
     {
         int newValue = count ?? fileListBox.CheckedItems.Count;
         itemsSelectedLabel.Text = $"Items selected: {newValue}";
+    }
+
+    private void UpdateSelectedSizeLabel()
+    {
+        // Get total size of selected files
+        long totalSize = 0;
+        foreach (string? fileName in fileListBox.CheckedItems)
+        {
+            totalSize += GetFileSize(fileName);
+        }
+        sizeLabel.Text = $"Selected size: {BytesToString(totalSize)}";
     }
 
     private void CheckDangerButton_Click(object? sender, EventArgs e)
