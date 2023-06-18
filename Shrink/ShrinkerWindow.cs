@@ -297,14 +297,14 @@ public partial class ShrinkerWindow : Form
         {
             currentPath = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
         }
-        FolderBrowserDialog cxtCacheFolderBrowser = new()
+        FolderBrowserDialog folderBrowser = new()
         {
             InitialDirectory = currentPath
         };
-        DialogResult result = cxtCacheFolderBrowser.ShowDialog();
+        DialogResult result = folderBrowser.ShowDialog();
         if (result == DialogResult.OK)
         {
-            string newPath = cxtCacheFolderBrowser.SelectedPath;
+            string newPath = folderBrowser.SelectedPath;
             rootPathBox.Text = newPath;
         }
     }
