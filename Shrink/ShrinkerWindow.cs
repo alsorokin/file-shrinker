@@ -679,6 +679,18 @@ public partial class ShrinkerWindow : Form
 
     private void NullifyButton_Click(object? sender, EventArgs e)
     {
+        // Ask user if they understand the risks
+        DialogResult dialogResult = MessageBox.Show(
+            "Nullifying files will set their size to zero, effectively removing their content. Please make sure you absolutely don't need these files. Are you sure you want to continue?",
+            "Warning",
+            MessageBoxButtons.YesNo,
+            MessageBoxIcon.Warning
+        );
+        if (dialogResult == DialogResult.No)
+        {
+            return;
+        }
+
         SetUIEnabled(false);
 
         failedFiles.Clear();
@@ -691,6 +703,7 @@ public partial class ShrinkerWindow : Form
                 long fileSize = fileInfo.Length;
                 FileTools.NullifyFile(fileName);
                 totalBytesFreed += fileSize;
+                fileSizeTable[fileName] = 0L;
             }
             catch
             {
