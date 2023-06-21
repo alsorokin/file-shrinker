@@ -76,6 +76,7 @@ public partial class ShrinkerWindow : Form
 
     private void InitializeComponent()
     {
+        System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(ShrinkerWindow));
         folderSelectButton = new Button();
         rootPathLabel = new Label();
         rootPathBox = new TextBox();
@@ -293,6 +294,7 @@ public partial class ShrinkerWindow : Form
         Controls.Add(rootPathLabel);
         Controls.Add(folderSelectButton);
         FormBorderStyle = FormBorderStyle.FixedSingle;
+        Icon = (Icon)resources.GetObject("$this.Icon");
         MaximizeBox = false;
         Name = "ShrinkerWindow";
         Text = "File Shrinker and Nullifier";
