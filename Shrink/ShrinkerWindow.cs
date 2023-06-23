@@ -12,7 +12,7 @@ public partial class ShrinkerWindow : Form
     private const long DEFAULT_FILE_SIZE_THRESHOLD_KILOBYTES = DEFAULT_FILE_SIZE_THRESHOLD_BYTES / 1024;
 
     private Hashtable fileSizeTable;
-    private readonly Progress<int> progress;
+    private readonly IProgress<int> progress;
     private readonly ConcurrentBag<string> failedFiles = new();
     private List<string>? nullifyPatterns;
     private List<string>? nullifyBlacklistPatterns;
@@ -37,6 +37,7 @@ public partial class ShrinkerWindow : Form
     private Label sizeLabel;
     private TableLayoutPanel scanPanel;
     private TableLayoutPanel mainLayoutPanel;
+    private Label statusLabel;
     private Button nullifyButton;
 
     // Suppress SC8618: Non-nullable field is uninitialized. Consider declaring as nullable.
@@ -71,6 +72,8 @@ public partial class ShrinkerWindow : Form
         IConfiguration config = builder.Build();
         nullifyPatterns = config.GetSection("NullifyPatterns").Get<List<string>>();
         nullifyBlacklistPatterns = config.GetSection("NullifyBlacklistPatterns").Get<List<string>>();
+
+        SetStatus("Click '...' button to select a folder for shrinking.");
     }
 
 #pragma warning restore CS8618
@@ -100,6 +103,7 @@ public partial class ShrinkerWindow : Form
         sizeLabel = new Label();
         scanPanel = new TableLayoutPanel();
         mainLayoutPanel = new TableLayoutPanel();
+        statusLabel = new Label();
         ((System.ComponentModel.ISupportInitialize)checkLargerThanUpDown).BeginInit();
         dangerGroup.SuspendLayout();
         scanPanel.SuspendLayout();
@@ -165,7 +169,7 @@ public partial class ShrinkerWindow : Form
         // shrinkButton
         // 
         shrinkButton.Anchor = AnchorStyles.Left | AnchorStyles.Right;
-        shrinkButton.Location = new Point(750, 430);
+        shrinkButton.Location = new Point(750, 432);
         shrinkButton.Name = "shrinkButton";
         mainLayoutPanel.SetRowSpan(shrinkButton, 2);
         shrinkButton.Size = new Size(114, 42);
@@ -178,7 +182,7 @@ public partial class ShrinkerWindow : Form
         // 
         shrinkProgressBar.Anchor = AnchorStyles.Left | AnchorStyles.Right;
         mainLayoutPanel.SetColumnSpan(shrinkProgressBar, 3);
-        shrinkProgressBar.Location = new Point(3, 449);
+        shrinkProgressBar.Location = new Point(3, 451);
         shrinkProgressBar.Name = "shrinkProgressBar";
         shrinkProgressBar.Size = new Size(741, 23);
         shrinkProgressBar.TabIndex = 6;
@@ -268,7 +272,7 @@ public partial class ShrinkerWindow : Form
         // itemsSelectedLabel
         // 
         itemsSelectedLabel.AutoSize = true;
-        itemsSelectedLabel.Location = new Point(103, 426);
+        itemsSelectedLabel.Location = new Point(103, 428);
         itemsSelectedLabel.Name = "itemsSelectedLabel";
         itemsSelectedLabel.Size = new Size(94, 15);
         itemsSelectedLabel.TabIndex = 13;
@@ -277,7 +281,7 @@ public partial class ShrinkerWindow : Form
         // itemsTotalLabel
         // 
         itemsTotalLabel.AutoSize = true;
-        itemsTotalLabel.Location = new Point(3, 426);
+        itemsTotalLabel.Location = new Point(3, 428);
         itemsTotalLabel.Name = "itemsTotalLabel";
         itemsTotalLabel.Size = new Size(75, 15);
         itemsTotalLabel.TabIndex = 14;
@@ -286,7 +290,7 @@ public partial class ShrinkerWindow : Form
         // sizeLabel
         // 
         sizeLabel.AutoSize = true;
-        sizeLabel.Location = new Point(223, 426);
+        sizeLabel.Location = new Point(223, 428);
         sizeLabel.Name = "sizeLabel";
         sizeLabel.Size = new Size(95, 15);
         sizeLabel.TabIndex = 15;
@@ -322,25 +326,36 @@ public partial class ShrinkerWindow : Form
         mainLayoutPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 120F));
         mainLayoutPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
         mainLayoutPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 120F));
-        mainLayoutPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 20F));
         mainLayoutPanel.Controls.Add(shrinkProgressBar, 0, 2);
         mainLayoutPanel.Controls.Add(shrinkButton, 3, 1);
         mainLayoutPanel.Controls.Add(itemsTotalLabel, 0, 1);
         mainLayoutPanel.Controls.Add(sizeLabel, 2, 1);
         mainLayoutPanel.Controls.Add(itemsSelectedLabel, 1, 1);
         mainLayoutPanel.Controls.Add(fileListBox, 0, 0);
+        mainLayoutPanel.Controls.Add(statusLabel, 0, 3);
         mainLayoutPanel.Location = new Point(12, 97);
         mainLayoutPanel.Name = "mainLayoutPanel";
-        mainLayoutPanel.RowCount = 3;
+        mainLayoutPanel.RowCount = 4;
         mainLayoutPanel.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
         mainLayoutPanel.RowStyles.Add(new RowStyle(SizeType.Absolute, 20F));
         mainLayoutPanel.RowStyles.Add(new RowStyle(SizeType.Absolute, 30F));
-        mainLayoutPanel.Size = new Size(867, 476);
+        mainLayoutPanel.RowStyles.Add(new RowStyle(SizeType.Absolute, 20F));
+        mainLayoutPanel.Size = new Size(867, 498);
         mainLayoutPanel.TabIndex = 17;
+        // 
+        // statusLabel
+        // 
+        statusLabel.AutoSize = true;
+        mainLayoutPanel.SetColumnSpan(statusLabel, 4);
+        statusLabel.Location = new Point(3, 478);
+        statusLabel.Name = "statusLabel";
+        statusLabel.Size = new Size(259, 15);
+        statusLabel.TabIndex = 16;
+        statusLabel.Text = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
         // 
         // ShrinkerWindow
         // 
-        ClientSize = new Size(890, 577);
+        ClientSize = new Size(890, 599);
         Controls.Add(mainLayoutPanel);
         Controls.Add(scanPanel);
         Controls.Add(dangerGroup);
@@ -380,6 +395,7 @@ public partial class ShrinkerWindow : Form
         {
             string newPath = folderBrowser.SelectedPath;
             rootPathBox.Text = newPath;
+            SetStatus("Folder selected. Click on 'Scan' button to scan it. Scanning large folders may take a while.");
         }
     }
 
@@ -387,7 +403,9 @@ public partial class ShrinkerWindow : Form
     {
         if (!Directory.Exists(rootPathBox.Text))
         {
-            MessageBox.Show("The specified path does not exist.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            string errorMessage = "The specified path does not exist.";
+            MessageBox.Show(errorMessage, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            SetStatus(errorMessage);
             return;
         }
 
@@ -399,6 +417,7 @@ public partial class ShrinkerWindow : Form
 
         string rootPath = rootPathBox.Text;
         string[] files;
+        SetStatus("Scanning folder...");
         try
         {
             // Recursively get all files in the rootPath
@@ -406,16 +425,23 @@ public partial class ShrinkerWindow : Form
         }
         catch (UnauthorizedAccessException ex)
         {
-            MessageBox.Show($"Could not acces some files in the specified path.\n\n{ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            string errorMessage = $"Could not acces some files in the specified path.";
+            string errorMessageFull = errorMessage + "\n\n" + ex.Message;
+            MessageBox.Show(errorMessageFull, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            SetStatus(errorMessage);
             SetUIEnabled(true);
             return;
         }
+        SetStatus("Sorting files...");
         Array.Sort(files);
 
+        SetStatus("Populating list...");
         // Fill the list box with the files
+        fileListBox.BeginUpdate();
         fileListBox.Items.Clear();
         fileListBox.Items.AddRange(files);
-        UpdateItemsTotalLabel();
+        fileListBox.EndUpdate();
+        SetStatus("Selecting items...");
         foreach (string fileName in files)
         {
             if (ShouldProcessFile(fileName))
@@ -424,6 +450,7 @@ public partial class ShrinkerWindow : Form
             }
         }
 
+        SetStatus("Folder scanned.");
         // Enable previously disabled elements
         SetUIEnabled(true);
         UpdateItemsTotalLabel();
@@ -434,10 +461,13 @@ public partial class ShrinkerWindow : Form
     {
         if (fileListBox.CheckedItems.Count == 0)
         {
-            MessageBox.Show("No files selected.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            string errorMessage = "No files selected.";
+            MessageBox.Show(errorMessage, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            SetStatus(errorMessage);
             return;
         }
 
+        SetStatus("Shrinking files...");
         // Disable all buttons and the list view until the process is complete
         SetUIEnabled(false);
 
@@ -445,7 +475,7 @@ public partial class ShrinkerWindow : Form
         shrinkProgressBar.Maximum = selectedFileNames.Count;
         shrinkProgressBar.Value = 0;
         failedFiles.Clear();
-        await ShrinkFilesAsync(selectedFileNames, progress);
+        await ShrinkFilesAsync(selectedFileNames);
         long totalBytes = 0;
         foreach (string fileName in selectedFileNames)
         {
@@ -462,35 +492,42 @@ public partial class ShrinkerWindow : Form
         long totalBytesSaved = totalBytes - totalBytesOnDisk;
         string savedBytesString = BytesToString(totalBytesSaved);
 
+        SetStatus("Unselecting successfully processed files.");
         if (!failedFiles.IsEmpty)
         {
-            MessageBox.Show($"All done, but some files could not be processed. They will still appear checked in the list. Saved {savedBytesString}", "Progress report", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-            foreach (string fileName in failedFiles)
+            string report = $"All done, but some files could not be processed. They will still appear checked in the list. Saved {savedBytesString}";
+            MessageBox.Show(report, "Progress report", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            foreach (int i in fileListBox.CheckedIndices)
             {
-                int index = fileListBox.Items.IndexOf(fileName);
-                fileListBox.SetItemChecked(index, true);
+                if (!failedFiles.Contains(fileListBox.Items[i].ToString()))
+                {
+                    fileListBox.SetItemChecked(i, false);
+                }
             }
+            SetStatus(report);
         }
         else
         {
-            MessageBox.Show($"All done! Saved {savedBytesString}", "Progress report");
-        }
-
-        // Uncheck all items
-        foreach (int i in fileListBox.CheckedIndices)
-        {
-            fileListBox.SetItemChecked(i, false);
+            // Uncheck all items
+            foreach (int i in fileListBox.CheckedIndices)
+            {
+                fileListBox.SetItemChecked(i, false);
+            }
+            string report = $"All done! Freed up {savedBytesString}";
+            MessageBox.Show(report, "Progress report");
+            SetStatus(report);
         }
 
         // Enable previously disabled elements
         SetUIEnabled(true);
     }
 
-    private async Task ShrinkFilesAsync(List<string> files, IProgress<int> progress)
+    private async Task ShrinkFilesAsync(List<string> files)
     {
         progress.Report(0);
         for (int i = 0; i < files.Count; i++)
         {
+            SetStatus($"Shrinking {files[i]}");
             await Task.Run(() => ShrinkFile(files[i]));
             progress.Report(i + 1);
         }
@@ -690,7 +727,9 @@ public partial class ShrinkerWindow : Form
         }
 
         SetUIEnabled(false);
-
+        SetStatus("Selecting files recommended for nullification...");
+        shrinkProgressBar.Maximum = fileListBox.Items.Count;
+        shrinkProgressBar.Value = 0;
         foreach (int i in fileListBox.CheckedIndices)
         {
             fileListBox.SetItemChecked(i, false);
@@ -699,8 +738,9 @@ public partial class ShrinkerWindow : Form
         {
             string? fileName = fileListBox.Items[i] as string;
             fileListBox.SetItemChecked(i, IsFileRecommendedForNullification(fileName));
+            progress.Report(i);
         }
-
+        SetStatus("Ready.");
         SetUIEnabled(true);
     }
 
@@ -807,6 +847,36 @@ public partial class ShrinkerWindow : Form
         if (e.KeyCode == Keys.Enter)
         {
             CheckLargerThanButton_Click(sender, e);
+        }
+    }
+
+    private void SetStatus(string status)
+    {
+        statusLabel.Text = status;
+        statusLabel.Invalidate();
+        statusLabel.Update();
+        statusLabel.Refresh();
+        Application.DoEvents();
+    }
+
+    private void DataGridView_CellContentClick(object sender, DataGridViewCellEventArgs e)
+    {
+        var senderGrid = (DataGridView)sender;
+
+        if (e.ColumnIndex == senderGrid.Columns["checkBoxes"].Index && e.RowIndex >= 0)
+        {
+            senderGrid.CommitEdit(DataGridViewDataErrorContexts.Commit);
+            bool isChecked = (bool)senderGrid[e.ColumnIndex, e.RowIndex].Value;
+            string itemText = (string)senderGrid[senderGrid.Columns["items"].Index, e.RowIndex].Value;
+
+            if (isChecked)
+            {
+                Console.WriteLine($"{itemText} was checked.");
+            }
+            else
+            {
+                Console.WriteLine($"{itemText} was unchecked.");
+            }
         }
     }
 }
