@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Configuration;
+using Shrink;
 using System.Collections;
 using System.Collections.Concurrent;
 using System.Diagnostics;
@@ -469,6 +470,12 @@ public partial class ShrinkerWindow : Form
         UpdateItemsSelectedLabel();
     }
 
+    private string[] GetAllFiles()
+    {
+        IEnumerable<string?> values = fileDataGrid.Rows.Cast<DataGridViewRow>().Select(row => row.Cells["Path"].Value as string);
+        return values.Where(value => !string.IsNullOrWhiteSpace(value)).ToArray()!;
+    }
+
     private List<string> GetSelectedFiles()
     {
         List<string> checkedItems = new();
@@ -479,8 +486,8 @@ public partial class ShrinkerWindow : Form
             if (isChecked)
             {
                 string? itemText = row.Cells["Path"].Value as string;
-                Debug.Assert(itemText != null);
-                if (itemText == null)
+                Debug.Assert(string.IsNullOrWhiteSpace(itemText));
+                if (string.IsNullOrWhiteSpace(itemText))
                 {
                     continue;
                 }
@@ -701,12 +708,13 @@ public partial class ShrinkerWindow : Form
     {
         SetUIEnabled(false);
         UnselectAll();
-        for (int i = 0; i < fileListBox.Items.Count; i++)
+        string[] fileNames = GetAllFiles();
+        for (int i = 0; i < fileNames.Length; i++)
         {
-            string? fileName = fileListBox.Items[i] as string;
-            if (GetFileSize(fileName) > checkLargerThanUpDown.Value * 1024)
+            if (GetFileSize(fileNames[i]) > checkLargerThanUpDown.Value * 1024)
             {
-                fileListBox.SetItemChecked(i, true);
+                // set checked
+                fileDataGrid.SetItemChecked(i, true);
             }
         }
         SetUIEnabled(true);
