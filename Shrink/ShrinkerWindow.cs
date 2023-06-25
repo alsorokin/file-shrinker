@@ -4,7 +4,6 @@ using System.Collections;
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Text.RegularExpressions;
-using System.Windows.Forms;
 
 namespace FileShrinker;
 
@@ -19,6 +18,8 @@ public partial class ShrinkerWindow : Form
     private List<string>? nullifyPatterns;
     private List<string>? nullifyBlacklistPatterns;
     private bool isWorking = false;
+    private long selectedSize = 0;
+    private long selectedCount = 0;
 
     private Button scanButton;
     private Button shrinkButton;
@@ -161,10 +162,9 @@ public partial class ShrinkerWindow : Form
         // shrinkButton
         // 
         shrinkButton.Anchor = AnchorStyles.Left | AnchorStyles.Right;
-        shrinkButton.Location = new Point(750, 432);
+        shrinkButton.Location = new Point(750, 421);
         shrinkButton.Name = "shrinkButton";
-        mainLayoutPanel.SetRowSpan(shrinkButton, 2);
-        shrinkButton.Size = new Size(114, 42);
+        shrinkButton.Size = new Size(114, 24);
         shrinkButton.TabIndex = 5;
         shrinkButton.Text = "Compress selected";
         shrinkButton.UseVisualStyleBackColor = true;
@@ -173,10 +173,10 @@ public partial class ShrinkerWindow : Form
         // shrinkProgressBar
         // 
         shrinkProgressBar.Anchor = AnchorStyles.Left | AnchorStyles.Right;
-        mainLayoutPanel.SetColumnSpan(shrinkProgressBar, 3);
+        mainLayoutPanel.SetColumnSpan(shrinkProgressBar, 4);
         shrinkProgressBar.Location = new Point(3, 451);
         shrinkProgressBar.Name = "shrinkProgressBar";
-        shrinkProgressBar.Size = new Size(741, 23);
+        shrinkProgressBar.Size = new Size(861, 23);
         shrinkProgressBar.TabIndex = 6;
         // 
         // checkAllButton
@@ -263,8 +263,9 @@ public partial class ShrinkerWindow : Form
         // 
         // itemsSelectedLabel
         // 
+        itemsSelectedLabel.Anchor = AnchorStyles.Left;
         itemsSelectedLabel.AutoSize = true;
-        itemsSelectedLabel.Location = new Point(103, 428);
+        itemsSelectedLabel.Location = new Point(153, 425);
         itemsSelectedLabel.Name = "itemsSelectedLabel";
         itemsSelectedLabel.Size = new Size(94, 15);
         itemsSelectedLabel.TabIndex = 13;
@@ -272,8 +273,9 @@ public partial class ShrinkerWindow : Form
         // 
         // itemsTotalLabel
         // 
+        itemsTotalLabel.Anchor = AnchorStyles.Left;
         itemsTotalLabel.AutoSize = true;
-        itemsTotalLabel.Location = new Point(3, 428);
+        itemsTotalLabel.Location = new Point(3, 425);
         itemsTotalLabel.Name = "itemsTotalLabel";
         itemsTotalLabel.Size = new Size(75, 15);
         itemsTotalLabel.TabIndex = 14;
@@ -281,8 +283,9 @@ public partial class ShrinkerWindow : Form
         // 
         // sizeLabel
         // 
+        sizeLabel.Anchor = AnchorStyles.Left;
         sizeLabel.AutoSize = true;
-        sizeLabel.Location = new Point(223, 428);
+        sizeLabel.Location = new Point(303, 425);
         sizeLabel.Name = "sizeLabel";
         sizeLabel.Size = new Size(95, 15);
         sizeLabel.TabIndex = 15;
@@ -314,22 +317,22 @@ public partial class ShrinkerWindow : Form
         mainLayoutPanel.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
         mainLayoutPanel.AutoSize = true;
         mainLayoutPanel.ColumnCount = 4;
-        mainLayoutPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 100F));
-        mainLayoutPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 120F));
+        mainLayoutPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 150F));
+        mainLayoutPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 150F));
         mainLayoutPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
         mainLayoutPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 120F));
         mainLayoutPanel.Controls.Add(shrinkProgressBar, 0, 2);
-        mainLayoutPanel.Controls.Add(shrinkButton, 3, 1);
         mainLayoutPanel.Controls.Add(itemsTotalLabel, 0, 1);
         mainLayoutPanel.Controls.Add(sizeLabel, 2, 1);
         mainLayoutPanel.Controls.Add(itemsSelectedLabel, 1, 1);
         mainLayoutPanel.Controls.Add(statusLabel, 0, 3);
         mainLayoutPanel.Controls.Add(fileDataGrid, 0, 0);
+        mainLayoutPanel.Controls.Add(shrinkButton, 3, 1);
         mainLayoutPanel.Location = new Point(12, 97);
         mainLayoutPanel.Name = "mainLayoutPanel";
         mainLayoutPanel.RowCount = 4;
         mainLayoutPanel.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
-        mainLayoutPanel.RowStyles.Add(new RowStyle(SizeType.Absolute, 20F));
+        mainLayoutPanel.RowStyles.Add(new RowStyle(SizeType.Absolute, 30F));
         mainLayoutPanel.RowStyles.Add(new RowStyle(SizeType.Absolute, 30F));
         mainLayoutPanel.RowStyles.Add(new RowStyle(SizeType.Absolute, 20F));
         mainLayoutPanel.Size = new Size(867, 498);
@@ -349,25 +352,34 @@ public partial class ShrinkerWindow : Form
         // 
         fileDataGrid.AllowUserToAddRows = false;
         fileDataGrid.AllowUserToDeleteRows = false;
+        fileDataGrid.AllowUserToResizeRows = false;
         fileDataGrid.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
         fileDataGrid.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
+        fileDataGrid.ClipboardCopyMode = DataGridViewClipboardCopyMode.EnableWithoutHeaderText;
         fileDataGrid.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
         fileDataGrid.Columns.AddRange(new DataGridViewColumn[] { Selected, Path });
         mainLayoutPanel.SetColumnSpan(fileDataGrid, 4);
+        fileDataGrid.EditMode = DataGridViewEditMode.EditOnEnter;
         fileDataGrid.Location = new Point(3, 3);
         fileDataGrid.Name = "fileDataGrid";
+        fileDataGrid.RowHeadersVisible = false;
         fileDataGrid.RowTemplate.Height = 25;
-        fileDataGrid.Size = new Size(861, 422);
+        fileDataGrid.Size = new Size(861, 412);
         fileDataGrid.TabIndex = 17;
+        fileDataGrid.CellContentClick += DataGridView_CellContentClick;
         // 
         // Selected
         // 
+        Selected.AutoSizeMode = DataGridViewAutoSizeColumnMode.None;
         Selected.FillWeight = 1F;
         Selected.HeaderText = "";
+        Selected.MinimumWidth = 20;
         Selected.Name = "Selected";
+        Selected.Width = 20;
         // 
         // Path
         // 
+        Path.FillWeight = 99F;
         Path.HeaderText = "File Path";
         Path.Name = "Path";
         Path.ReadOnly = true;
@@ -476,25 +488,22 @@ public partial class ShrinkerWindow : Form
         return values.Where(value => !string.IsNullOrWhiteSpace(value)).ToArray()!;
     }
 
-    private List<string> GetSelectedFiles()
+    private string[] GetSelectedFiles()
     {
-        List<string> checkedItems = new();
-
-        foreach (DataGridViewRow row in fileDataGrid.Rows)
-        {
-            bool isChecked = Convert.ToBoolean(row.Cells["Selected"].Value);
-            if (isChecked)
+        return fileDataGrid.Rows.Cast<DataGridViewRow>()
+            .Where(row => Convert.ToBoolean(row.Cells["Selected"].Value))
+            .Select(row =>
             {
                 string? itemText = row.Cells["Path"].Value as string;
-                Debug.Assert(string.IsNullOrWhiteSpace(itemText));
-                if (string.IsNullOrWhiteSpace(itemText))
-                {
-                    continue;
-                }
-                checkedItems.Add(itemText);
-            }
-        }
-        return checkedItems;
+                Debug.Assert(!string.IsNullOrWhiteSpace(itemText));
+                return itemText;
+            })
+            .ToArray();
+    }
+
+    private int CountSelectedFiles()
+    {
+        return GetSelectedFiles().Length;
     }
 
     private void SelectFiles(IEnumerable<string> fileNames, bool value = true)
@@ -552,8 +561,8 @@ public partial class ShrinkerWindow : Form
 
     private async void ShrinkButton_Click(object? sender, EventArgs e)
     {
-        List<string> selectedFiles = GetSelectedFiles();
-        if (selectedFiles.Count == 0)
+        string[] selectedFiles = GetSelectedFiles();
+        if (selectedFiles.Length == 0)
         {
             string errorMessage = "No files selected.";
             MessageBox.Show(errorMessage, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
@@ -565,7 +574,7 @@ public partial class ShrinkerWindow : Form
         // Disable all buttons and the list view until the process is complete
         SetUIEnabled(false);
 
-        shrinkProgressBar.Maximum = selectedFiles.Count;
+        shrinkProgressBar.Maximum = selectedFiles.Length;
         shrinkProgressBar.Value = 0;
         failedFiles.Clear();
         await ShrinkFilesAsync(selectedFiles);
@@ -593,10 +602,10 @@ public partial class ShrinkerWindow : Form
         SetUIEnabled(true);
     }
 
-    private async Task ShrinkFilesAsync(List<string> files)
+    private async Task ShrinkFilesAsync(string[] files)
     {
         progress.Report(0);
-        for (int i = 0; i < files.Count; i++)
+        for (int i = 0; i < files.Length; i++)
         {
             SetStatus($"Shrinking {files[i]}");
             await Task.Run(() => ShrinkFile(files[i]));
@@ -746,62 +755,75 @@ public partial class ShrinkerWindow : Form
             return;
         }
 
-        int count = fileListBox.CheckedIndices.Count + (e.NewValue == CheckState.Checked ? 1 : -1);
-        UpdateItemsSelectedLabel(count);
+        UpdateItemsSelectedLabel();
         UpdateSelectedSizeLabel();
     }
 
     private void UpdateLabels()
     {
-        UpdateItemsSelectedLabel();
         UpdateItemsTotalLabel();
+        UpdateItemsSelectedLabel();
         UpdateSelectedSizeLabel();
     }
 
     private void UpdateItemsTotalLabel()
     {
-        itemsTotalLabel.Text = $"Total items: {fileListBox.Items.Count}";
+        itemsTotalLabel.Text = $"Total items: {fileDataGrid.RowCount}";
     }
 
-    private void UpdateItemsSelectedLabel(int? count = null)
+    private void UpdateItemsSelectedLabel()
     {
-        int newValue = count ?? fileListBox.CheckedItems.Count;
-        itemsSelectedLabel.Text = $"Items selected: {newValue}";
+        selectedCount = CountSelectedFiles();
+        itemsSelectedLabel.Text = $"Items selected: {selectedCount}";
+    }
+
+    private void UpdateItemsSelectedLabel(long count)
+    {
+        selectedCount = count;
+        itemsSelectedLabel.Text = $"Items selected: {count}";
     }
 
     private void UpdateSelectedSizeLabel()
     {
         // Get total size of selected files
-        long totalSize = 0;
-        foreach (string? fileName in fileListBox.CheckedItems)
+        selectedSize = 0;
+        foreach (string fileName in GetSelectedFiles())
         {
-            totalSize += GetFileSize(fileName);
+            selectedSize += GetFileSize(fileName);
         }
-        sizeLabel.Text = $"Selected size: {BytesToString(totalSize)}";
+        sizeLabel.Text = $"Selected size: {BytesToString(selectedSize)}";
+    }
+
+    private void UpdateSelectedSizeLabel(long size)
+    {
+        selectedSize = size;
+        sizeLabel.Text = $"Selected size: {BytesToString(size)}";
     }
 
     private void CheckDangerButton_Click(object? sender, EventArgs e)
     {
         Debug.Assert(nullifyPatterns != null);
         Debug.Assert(nullifyBlacklistPatterns != null);
-        if (nullifyPatterns == null || nullifyBlacklistPatterns == null || fileListBox.Items.Count == 0)
+        if (nullifyPatterns == null || nullifyBlacklistPatterns == null)
+        {
+            return;
+        }
+        string[] allFiles = GetAllFiles();
+        string[] selectedFiles = GetSelectedFiles();
+        if (allFiles.Length == 0)
         {
             return;
         }
 
         SetUIEnabled(false);
         SetStatus("Selecting files recommended for nullification...");
-        shrinkProgressBar.Maximum = fileListBox.Items.Count;
+        shrinkProgressBar.Maximum = allFiles.Length;
         shrinkProgressBar.Value = 0;
-        foreach (int i in fileListBox.CheckedIndices)
+        for (int i = 0; i < allFiles.Length; i++)
         {
-            fileListBox.SetItemChecked(i, false);
-        }
-        for (int i = 0; i < fileListBox.Items.Count; i++)
-        {
-            string? fileName = fileListBox.Items[i] as string;
-            fileListBox.SetItemChecked(i, IsFileRecommendedForNullification(fileName));
-            progress.Report(i);
+            string? fileName = allFiles[i];
+            fileDataGrid.SetItemChecked(i, IsFileRecommendedForNullification(fileName));
+            progress.Report(i + 1);
         }
         SetStatus("Ready.");
         SetUIEnabled(true);
@@ -824,24 +846,6 @@ public partial class ShrinkerWindow : Form
         return nullifyBlacklistPatterns.Any(pattern => Regex.IsMatch(fileName, pattern));
     }
 
-    private void FileListBox_MouseDown(object? sender, MouseEventArgs e)
-    {
-        if (e.Button == MouseButtons.Right)
-        {
-            int index = fileListBox.IndexFromPoint(e.Location);
-            if (index != ListBox.NoMatches)
-            {
-                fileListBox.SelectedIndex = index;
-
-                string? filePath = fileListBox.SelectedItem as string;
-                if (!string.IsNullOrEmpty(filePath) && File.Exists(filePath))
-                {
-                    Process.Start("explorer.exe", $"/select,\"{filePath}\"");
-                }
-            }
-        }
-    }
-
     private void NullifyButton_Click(object? sender, EventArgs e)
     {
         // Ask user if they understand the risks
@@ -860,7 +864,8 @@ public partial class ShrinkerWindow : Form
 
         failedFiles.Clear();
         long totalBytesFreed = 0;
-        foreach (string fileName in fileListBox.CheckedItems)
+        string[] selectedFiles = GetSelectedFiles();
+        foreach (string fileName in selectedFiles)
         {
             try
             {
@@ -878,28 +883,28 @@ public partial class ShrinkerWindow : Form
         if (!failedFiles.Any())
         {
             MessageBox.Show(
-                $"Successfully nullified {fileListBox.CheckedItems.Count} files, freeing {BytesToString(totalBytesFreed)} of disk space.", "Success",
+                $"Successfully nullified {selectedFiles.Length} files, freeing {BytesToString(totalBytesFreed)} of disk space.", "Success",
                 MessageBoxButtons.OK,
                 MessageBoxIcon.Information
             );
         }
         else
         {
-            MessageBox.Show($"Nullified {fileListBox.CheckedItems.Count} files, freeing {BytesToString(totalBytesFreed)} of disk space. There were errors for some of the files. These files will remain selected.",
+            MessageBox.Show($"Nullified {selectedFiles.Length} files, freeing {BytesToString(totalBytesFreed)} of disk space. There were errors for some of the files. These files will remain selected.",
                 "Finished with errors",
                 MessageBoxButtons.OK,
                 MessageBoxIcon.Warning
            );
         }
         // Uncheck all items except for failed files
-        for (int i = 0; i < fileListBox.Items.Count; i++)
+        string[] allFiles = GetAllFiles();
+        for (int i = 0; i < allFiles.Length; i++)
         {
-            string? fileName = fileListBox.Items[i] as string;
-            if (failedFiles.Contains(fileName))
+            if (failedFiles.Contains(allFiles[i]))
             {
                 continue;
             }
-            fileListBox.SetItemChecked(i, false);
+            fileDataGrid.SetItemChecked(i, false);
         }
 
         SetUIEnabled(true);
@@ -922,23 +927,27 @@ public partial class ShrinkerWindow : Form
         Application.DoEvents();
     }
 
-    private void DataGridView_CellContentClick(object sender, DataGridViewCellEventArgs e)
+    private void DataGridView_CellContentClick(object? sender, DataGridViewCellEventArgs e)
     {
+        Debug.Assert(sender is DataGridView);
         var senderGrid = (DataGridView)sender;
 
-        if (e.ColumnIndex == senderGrid.Columns["checkBoxes"].Index && e.RowIndex >= 0)
+        if (e.ColumnIndex == senderGrid.Columns["Selected"].Index && e.RowIndex >= 0)
         {
-            senderGrid.CommitEdit(DataGridViewDataErrorContexts.Commit);
+            // senderGrid.CommitEdit(DataGridViewDataErrorContexts.Commit);
+            senderGrid[e.ColumnIndex, e.RowIndex].Value = !(bool)senderGrid[e.ColumnIndex, e.RowIndex].Value;
             bool isChecked = (bool)senderGrid[e.ColumnIndex, e.RowIndex].Value;
-            string itemText = (string)senderGrid[senderGrid.Columns["items"].Index, e.RowIndex].Value;
+            string fileName = (string)senderGrid[senderGrid.Columns["Path"].Index, e.RowIndex].Value;
 
             if (isChecked)
             {
-                Console.WriteLine($"{itemText} was checked.");
+                UpdateItemsSelectedLabel(selectedCount + 1);
+                UpdateSelectedSizeLabel(selectedSize + GetFileSize(fileName));
             }
             else
             {
-                Console.WriteLine($"{itemText} was unchecked.");
+                UpdateItemsSelectedLabel(selectedCount - 1);
+                UpdateSelectedSizeLabel(selectedSize - GetFileSize(fileName));
             }
         }
     }
