@@ -41,6 +41,7 @@ public partial class ShrinkerWindow : Form
     private TableLayoutPanel mainLayoutPanel;
     private Label statusLabel;
     private DataGridView fileDataGrid;
+    private GroupBox groupBox1;
     private DataGridViewCheckBoxColumn Selected;
     private DataGridViewTextBoxColumn Path;
     private Button nullifyButton;
@@ -111,11 +112,13 @@ public partial class ShrinkerWindow : Form
         fileDataGrid = new DataGridView();
         Selected = new DataGridViewCheckBoxColumn();
         Path = new DataGridViewTextBoxColumn();
+        groupBox1 = new GroupBox();
         ((System.ComponentModel.ISupportInitialize)checkLargerThanUpDown).BeginInit();
         dangerGroup.SuspendLayout();
         scanPanel.SuspendLayout();
         mainLayoutPanel.SuspendLayout();
         ((System.ComponentModel.ISupportInitialize)fileDataGrid).BeginInit();
+        groupBox1.SuspendLayout();
         SuspendLayout();
         // 
         // folderSelectButton
@@ -123,7 +126,7 @@ public partial class ShrinkerWindow : Form
         folderSelectButton.Anchor = AnchorStyles.Right;
         folderSelectButton.Location = new Point(775, 3);
         folderSelectButton.Name = "folderSelectButton";
-        folderSelectButton.Size = new Size(29, 23);
+        folderSelectButton.Size = new Size(29, 27);
         folderSelectButton.TabIndex = 0;
         folderSelectButton.Text = "...";
         folderSelectButton.UseVisualStyleBackColor = true;
@@ -133,18 +136,18 @@ public partial class ShrinkerWindow : Form
         // 
         rootPathLabel.Anchor = AnchorStyles.Left;
         rootPathLabel.AutoSize = true;
-        rootPathLabel.Location = new Point(3, 7);
+        rootPathLabel.Location = new Point(3, 6);
         rootPathLabel.Name = "rootPathLabel";
-        rootPathLabel.Size = new Size(34, 15);
+        rootPathLabel.Size = new Size(40, 20);
         rootPathLabel.TabIndex = 1;
         rootPathLabel.Text = "Path:";
         // 
         // rootPathBox
         // 
         rootPathBox.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
-        rootPathBox.Location = new Point(43, 3);
+        rootPathBox.Location = new Point(63, 3);
         rootPathBox.Name = "rootPathBox";
-        rootPathBox.Size = new Size(726, 23);
+        rootPathBox.Size = new Size(706, 27);
         rootPathBox.TabIndex = 2;
         rootPathBox.KeyDown += RootPathBox_KeyDown;
         // 
@@ -153,7 +156,7 @@ public partial class ShrinkerWindow : Form
         scanButton.Anchor = AnchorStyles.Right;
         scanButton.Location = new Point(810, 3);
         scanButton.Name = "scanButton";
-        scanButton.Size = new Size(54, 23);
+        scanButton.Size = new Size(54, 27);
         scanButton.TabIndex = 3;
         scanButton.Text = "Scan";
         scanButton.UseVisualStyleBackColor = true;
@@ -162,9 +165,9 @@ public partial class ShrinkerWindow : Form
         // shrinkButton
         // 
         shrinkButton.Anchor = AnchorStyles.Left | AnchorStyles.Right;
-        shrinkButton.Location = new Point(750, 421);
+        shrinkButton.Location = new Point(750, 405);
         shrinkButton.Name = "shrinkButton";
-        shrinkButton.Size = new Size(114, 24);
+        shrinkButton.Size = new Size(114, 27);
         shrinkButton.TabIndex = 5;
         shrinkButton.Text = "Compress selected";
         shrinkButton.UseVisualStyleBackColor = true;
@@ -174,47 +177,47 @@ public partial class ShrinkerWindow : Form
         // 
         shrinkProgressBar.Anchor = AnchorStyles.Left | AnchorStyles.Right;
         mainLayoutPanel.SetColumnSpan(shrinkProgressBar, 4);
-        shrinkProgressBar.Location = new Point(3, 451);
+        shrinkProgressBar.Location = new Point(3, 440);
         shrinkProgressBar.Name = "shrinkProgressBar";
         shrinkProgressBar.Size = new Size(861, 23);
         shrinkProgressBar.TabIndex = 6;
         // 
         // checkAllButton
         // 
-        checkAllButton.Location = new Point(12, 39);
+        checkAllButton.Location = new Point(10, 26);
         checkAllButton.Name = "checkAllButton";
-        checkAllButton.Size = new Size(90, 23);
+        checkAllButton.Size = new Size(90, 27);
         checkAllButton.TabIndex = 7;
-        checkAllButton.Text = "Select all";
+        checkAllButton.Text = "All";
         checkAllButton.UseVisualStyleBackColor = true;
         checkAllButton.Click += CheckAllButton_Click;
         // 
         // uncheckAllButton
         // 
-        uncheckAllButton.Location = new Point(12, 67);
+        uncheckAllButton.Location = new Point(106, 26);
         uncheckAllButton.Name = "uncheckAllButton";
-        uncheckAllButton.Size = new Size(90, 23);
+        uncheckAllButton.Size = new Size(90, 27);
         uncheckAllButton.TabIndex = 8;
-        uncheckAllButton.Text = "Unselect all";
+        uncheckAllButton.Text = "None";
         uncheckAllButton.UseVisualStyleBackColor = true;
         uncheckAllButton.Click += UncheckAllButton_Click;
         // 
         // checkLargerThanButton
         // 
-        checkLargerThanButton.Location = new Point(108, 67);
+        checkLargerThanButton.Location = new Point(217, 26);
         checkLargerThanButton.Name = "checkLargerThanButton";
-        checkLargerThanButton.Size = new Size(115, 23);
+        checkLargerThanButton.Size = new Size(100, 27);
         checkLargerThanButton.TabIndex = 9;
-        checkLargerThanButton.Text = "Select larger than:";
+        checkLargerThanButton.Text = "Larger than:";
         checkLargerThanButton.UseVisualStyleBackColor = true;
         checkLargerThanButton.Click += CheckLargerThanButton_Click;
         // 
         // checkLargerThanUpDown
         // 
-        checkLargerThanUpDown.Location = new Point(229, 67);
+        checkLargerThanUpDown.Location = new Point(325, 27);
         checkLargerThanUpDown.Maximum = new decimal(new int[] { -1, int.MaxValue, 0, 0 });
         checkLargerThanUpDown.Name = "checkLargerThanUpDown";
-        checkLargerThanUpDown.Size = new Size(107, 23);
+        checkLargerThanUpDown.Size = new Size(107, 27);
         checkLargerThanUpDown.TabIndex = 10;
         checkLargerThanUpDown.ThousandsSeparator = true;
         checkLargerThanUpDown.KeyDown += CheckLargerThanUpDown_KeyDown;
@@ -222,9 +225,9 @@ public partial class ShrinkerWindow : Form
         // bLabel
         // 
         bLabel.AutoSize = true;
-        bLabel.Location = new Point(342, 71);
+        bLabel.Location = new Point(433, 31);
         bLabel.Name = "bLabel";
-        bLabel.Size = new Size(21, 15);
+        bLabel.Size = new Size(27, 20);
         bLabel.TabIndex = 11;
         bLabel.Text = "KB";
         // 
@@ -236,16 +239,16 @@ public partial class ShrinkerWindow : Form
         dangerGroup.Controls.Add(checkDangerButton);
         dangerGroup.Location = new Point(587, 38);
         dangerGroup.Name = "dangerGroup";
-        dangerGroup.Size = new Size(291, 53);
+        dangerGroup.Size = new Size(291, 66);
         dangerGroup.TabIndex = 12;
         dangerGroup.TabStop = false;
         dangerGroup.Text = "!!! DANGER ZONE !!!";
         // 
         // nullifyButton
         // 
-        nullifyButton.Location = new Point(150, 20);
+        nullifyButton.Location = new Point(150, 26);
         nullifyButton.Name = "nullifyButton";
-        nullifyButton.Size = new Size(135, 23);
+        nullifyButton.Size = new Size(135, 27);
         nullifyButton.TabIndex = 1;
         nullifyButton.Text = "NULLIFY SELECTED";
         nullifyButton.UseVisualStyleBackColor = true;
@@ -253,9 +256,9 @@ public partial class ShrinkerWindow : Form
         // 
         // checkDangerButton
         // 
-        checkDangerButton.Location = new Point(6, 20);
+        checkDangerButton.Location = new Point(6, 26);
         checkDangerButton.Name = "checkDangerButton";
-        checkDangerButton.Size = new Size(140, 23);
+        checkDangerButton.Size = new Size(140, 27);
         checkDangerButton.TabIndex = 0;
         checkDangerButton.Text = "Select recommended";
         checkDangerButton.UseVisualStyleBackColor = true;
@@ -265,9 +268,9 @@ public partial class ShrinkerWindow : Form
         // 
         itemsSelectedLabel.Anchor = AnchorStyles.Left;
         itemsSelectedLabel.AutoSize = true;
-        itemsSelectedLabel.Location = new Point(153, 425);
+        itemsSelectedLabel.Location = new Point(153, 408);
         itemsSelectedLabel.Name = "itemsSelectedLabel";
-        itemsSelectedLabel.Size = new Size(94, 15);
+        itemsSelectedLabel.Size = new Size(119, 20);
         itemsSelectedLabel.TabIndex = 13;
         itemsSelectedLabel.Text = "Items selected: 0";
         // 
@@ -275,9 +278,9 @@ public partial class ShrinkerWindow : Form
         // 
         itemsTotalLabel.Anchor = AnchorStyles.Left;
         itemsTotalLabel.AutoSize = true;
-        itemsTotalLabel.Location = new Point(3, 425);
+        itemsTotalLabel.Location = new Point(3, 408);
         itemsTotalLabel.Name = "itemsTotalLabel";
-        itemsTotalLabel.Size = new Size(75, 15);
+        itemsTotalLabel.Size = new Size(95, 20);
         itemsTotalLabel.TabIndex = 14;
         itemsTotalLabel.Text = "Items total: 0";
         // 
@@ -285,9 +288,9 @@ public partial class ShrinkerWindow : Form
         // 
         sizeLabel.Anchor = AnchorStyles.Left;
         sizeLabel.AutoSize = true;
-        sizeLabel.Location = new Point(303, 425);
+        sizeLabel.Location = new Point(303, 408);
         sizeLabel.Name = "sizeLabel";
-        sizeLabel.Size = new Size(95, 15);
+        sizeLabel.Size = new Size(123, 20);
         sizeLabel.TabIndex = 15;
         sizeLabel.Text = "Selected size: 0 B";
         // 
@@ -297,7 +300,7 @@ public partial class ShrinkerWindow : Form
         scanPanel.AutoSize = true;
         scanPanel.AutoSizeMode = AutoSizeMode.GrowAndShrink;
         scanPanel.ColumnCount = 4;
-        scanPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 40F));
+        scanPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 60F));
         scanPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
         scanPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 35F));
         scanPanel.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 60F));
@@ -309,7 +312,7 @@ public partial class ShrinkerWindow : Form
         scanPanel.Name = "scanPanel";
         scanPanel.RowCount = 1;
         scanPanel.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
-        scanPanel.Size = new Size(867, 29);
+        scanPanel.Size = new Size(867, 33);
         scanPanel.TabIndex = 16;
         // 
         // mainLayoutPanel
@@ -328,23 +331,23 @@ public partial class ShrinkerWindow : Form
         mainLayoutPanel.Controls.Add(statusLabel, 0, 3);
         mainLayoutPanel.Controls.Add(fileDataGrid, 0, 0);
         mainLayoutPanel.Controls.Add(shrinkButton, 3, 1);
-        mainLayoutPanel.Location = new Point(12, 97);
+        mainLayoutPanel.Location = new Point(12, 110);
         mainLayoutPanel.Name = "mainLayoutPanel";
         mainLayoutPanel.RowCount = 4;
         mainLayoutPanel.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
-        mainLayoutPanel.RowStyles.Add(new RowStyle(SizeType.Absolute, 30F));
-        mainLayoutPanel.RowStyles.Add(new RowStyle(SizeType.Absolute, 30F));
-        mainLayoutPanel.RowStyles.Add(new RowStyle(SizeType.Absolute, 20F));
-        mainLayoutPanel.Size = new Size(867, 498);
+        mainLayoutPanel.RowStyles.Add(new RowStyle(SizeType.Absolute, 33F));
+        mainLayoutPanel.RowStyles.Add(new RowStyle(SizeType.Absolute, 33F));
+        mainLayoutPanel.RowStyles.Add(new RowStyle(SizeType.Absolute, 23F));
+        mainLayoutPanel.Size = new Size(867, 491);
         mainLayoutPanel.TabIndex = 17;
         // 
         // statusLabel
         // 
         statusLabel.AutoSize = true;
         mainLayoutPanel.SetColumnSpan(statusLabel, 4);
-        statusLabel.Location = new Point(3, 478);
+        statusLabel.Location = new Point(3, 468);
         statusLabel.Name = "statusLabel";
-        statusLabel.Size = new Size(259, 15);
+        statusLabel.Size = new Size(345, 20);
         statusLabel.TabIndex = 16;
         statusLabel.Text = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
         // 
@@ -363,8 +366,9 @@ public partial class ShrinkerWindow : Form
         fileDataGrid.Location = new Point(3, 3);
         fileDataGrid.Name = "fileDataGrid";
         fileDataGrid.RowHeadersVisible = false;
+        fileDataGrid.RowHeadersWidth = 51;
         fileDataGrid.RowTemplate.Height = 25;
-        fileDataGrid.Size = new Size(861, 412);
+        fileDataGrid.Size = new Size(861, 396);
         fileDataGrid.TabIndex = 17;
         fileDataGrid.CellContentClick += DataGridView_CellContentClick;
         // 
@@ -375,26 +379,37 @@ public partial class ShrinkerWindow : Form
         Selected.HeaderText = "";
         Selected.MinimumWidth = 20;
         Selected.Name = "Selected";
-        Selected.Width = 20;
+        Selected.Width = 25;
         // 
         // Path
         // 
         Path.FillWeight = 99F;
         Path.HeaderText = "File Path";
+        Path.MinimumWidth = 6;
         Path.Name = "Path";
         Path.ReadOnly = true;
         // 
+        // groupBox1
+        // 
+        groupBox1.Controls.Add(checkAllButton);
+        groupBox1.Controls.Add(uncheckAllButton);
+        groupBox1.Controls.Add(checkLargerThanButton);
+        groupBox1.Controls.Add(checkLargerThanUpDown);
+        groupBox1.Controls.Add(bLabel);
+        groupBox1.Location = new Point(12, 38);
+        groupBox1.Name = "groupBox1";
+        groupBox1.Size = new Size(463, 66);
+        groupBox1.TabIndex = 18;
+        groupBox1.TabStop = false;
+        groupBox1.Text = "Select";
+        // 
         // ShrinkerWindow
         // 
-        ClientSize = new Size(890, 599);
+        ClientSize = new Size(890, 605);
+        Controls.Add(groupBox1);
         Controls.Add(mainLayoutPanel);
         Controls.Add(scanPanel);
         Controls.Add(dangerGroup);
-        Controls.Add(bLabel);
-        Controls.Add(checkLargerThanUpDown);
-        Controls.Add(checkLargerThanButton);
-        Controls.Add(uncheckAllButton);
-        Controls.Add(checkAllButton);
         Icon = (Icon)resources.GetObject("$this.Icon");
         MinimumSize = new Size(700, 350);
         Name = "ShrinkerWindow";
@@ -406,6 +421,8 @@ public partial class ShrinkerWindow : Form
         mainLayoutPanel.ResumeLayout(false);
         mainLayoutPanel.PerformLayout();
         ((System.ComponentModel.ISupportInitialize)fileDataGrid).EndInit();
+        groupBox1.ResumeLayout(false);
+        groupBox1.PerformLayout();
         ResumeLayout(false);
         PerformLayout();
     }
