@@ -136,9 +136,9 @@ public partial class ShrinkerWindow : Form
         // 
         rootPathLabel.Anchor = AnchorStyles.Left;
         rootPathLabel.AutoSize = true;
-        rootPathLabel.Location = new Point(3, 6);
+        rootPathLabel.Location = new Point(3, 9);
         rootPathLabel.Name = "rootPathLabel";
-        rootPathLabel.Size = new Size(40, 20);
+        rootPathLabel.Size = new Size(34, 15);
         rootPathLabel.TabIndex = 1;
         rootPathLabel.Text = "Path:";
         // 
@@ -147,7 +147,7 @@ public partial class ShrinkerWindow : Form
         rootPathBox.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
         rootPathBox.Location = new Point(63, 3);
         rootPathBox.Name = "rootPathBox";
-        rootPathBox.Size = new Size(706, 27);
+        rootPathBox.Size = new Size(706, 23);
         rootPathBox.TabIndex = 2;
         rootPathBox.KeyDown += RootPathBox_KeyDown;
         // 
@@ -217,7 +217,7 @@ public partial class ShrinkerWindow : Form
         checkLargerThanUpDown.Location = new Point(325, 27);
         checkLargerThanUpDown.Maximum = new decimal(new int[] { -1, int.MaxValue, 0, 0 });
         checkLargerThanUpDown.Name = "checkLargerThanUpDown";
-        checkLargerThanUpDown.Size = new Size(107, 27);
+        checkLargerThanUpDown.Size = new Size(107, 23);
         checkLargerThanUpDown.TabIndex = 10;
         checkLargerThanUpDown.ThousandsSeparator = true;
         checkLargerThanUpDown.KeyDown += CheckLargerThanUpDown_KeyDown;
@@ -227,7 +227,7 @@ public partial class ShrinkerWindow : Form
         bLabel.AutoSize = true;
         bLabel.Location = new Point(433, 31);
         bLabel.Name = "bLabel";
-        bLabel.Size = new Size(27, 20);
+        bLabel.Size = new Size(21, 15);
         bLabel.TabIndex = 11;
         bLabel.Text = "KB";
         // 
@@ -268,9 +268,9 @@ public partial class ShrinkerWindow : Form
         // 
         itemsSelectedLabel.Anchor = AnchorStyles.Left;
         itemsSelectedLabel.AutoSize = true;
-        itemsSelectedLabel.Location = new Point(153, 408);
+        itemsSelectedLabel.Location = new Point(153, 411);
         itemsSelectedLabel.Name = "itemsSelectedLabel";
-        itemsSelectedLabel.Size = new Size(119, 20);
+        itemsSelectedLabel.Size = new Size(94, 15);
         itemsSelectedLabel.TabIndex = 13;
         itemsSelectedLabel.Text = "Items selected: 0";
         // 
@@ -278,9 +278,9 @@ public partial class ShrinkerWindow : Form
         // 
         itemsTotalLabel.Anchor = AnchorStyles.Left;
         itemsTotalLabel.AutoSize = true;
-        itemsTotalLabel.Location = new Point(3, 408);
+        itemsTotalLabel.Location = new Point(3, 411);
         itemsTotalLabel.Name = "itemsTotalLabel";
-        itemsTotalLabel.Size = new Size(95, 20);
+        itemsTotalLabel.Size = new Size(75, 15);
         itemsTotalLabel.TabIndex = 14;
         itemsTotalLabel.Text = "Items total: 0";
         // 
@@ -288,9 +288,9 @@ public partial class ShrinkerWindow : Form
         // 
         sizeLabel.Anchor = AnchorStyles.Left;
         sizeLabel.AutoSize = true;
-        sizeLabel.Location = new Point(303, 408);
+        sizeLabel.Location = new Point(303, 411);
         sizeLabel.Name = "sizeLabel";
-        sizeLabel.Size = new Size(123, 20);
+        sizeLabel.Size = new Size(95, 15);
         sizeLabel.TabIndex = 15;
         sizeLabel.Text = "Selected size: 0 B";
         // 
@@ -347,7 +347,7 @@ public partial class ShrinkerWindow : Form
         mainLayoutPanel.SetColumnSpan(statusLabel, 4);
         statusLabel.Location = new Point(3, 468);
         statusLabel.Name = "statusLabel";
-        statusLabel.Size = new Size(345, 20);
+        statusLabel.Size = new Size(259, 15);
         statusLabel.TabIndex = 16;
         statusLabel.Text = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
         // 
