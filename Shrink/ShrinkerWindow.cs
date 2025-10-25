@@ -658,6 +658,7 @@ public partial class ShrinkerWindow : Form
         nullifyButton.Enabled = enabled;
         checkLargerThanButton.Enabled = enabled;
         checkLargerThanUpDown.Enabled = enabled;
+        fileDataGrid.Enabled = enabled;
 
         if (enabled)
         {
